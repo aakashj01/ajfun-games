@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Odd Little Games</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: a toy shelf. Hub = wall of bright tiles; each game opens full-width under a slim sticky bar. */
+:root {
+  --bg: #E7EAF4;
+  --surface: #F7F8FC;
+  --surface-2: #DDE1EF;
+  --fg: #15162A;
+  --muted: #585C7A;
+  --line: #C5CAE0;
+  --accent: #3434E6;
+  --accent-fg: #FFFFFF;
+  --good: #11865A;
+  --bad: #D2332B;
+  --ink: #15162A;          /* text on bright tiles, same in both themes */
+  --t-tomato: #FF7A59; --t-yolk: #FFD23F; --t-mint: #5EE6A8; --t-sky: #6EC5FF;
+  --t-lilac: #B79CFF; --t-pink: #FF8FC7; --t-lime: #C6F45A; --t-peach: #FFB27A;
+  --font-display: "Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1020; --surface: #1A1B31; --surface-2: #24263F; --fg: #ECEDF8; --muted: #9DA0C0;
+    --line: #2F3150; --accent: #8E8EFF; --accent-fg: #0F1020; --good: #4ADE9B; --bad: #FF6B60;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1020; --surface: #1A1B31; --surface-2: #24263F; --fg: #ECEDF8; --muted: #9DA0C0;
+  --line: #2F3150; --accent: #8E8EFF; --accent-fg: #0F1020; --good: #4ADE9B; --bad: #FF6B60;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+a { color: var(--accent); }
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- hub ---------- */
+.hub-head { padding-block: 48px 28px; display: grid; gap: 14px; }
+.hub-head h1 {
+  font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em;
+  font-size: clamp(44px, 8vw, 96px); line-height: 0.92; margin: 0; text-wrap: balance;
+}
+.hub-head h1 .wobble { display: inline-block; transform: rotate(-4deg); color: var(--accent); }
+.hub-head p { margin: 0; max-width: 56ch; color: var(--muted); font-size: 18px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 20px; }
+.chip {
+  border: 1.5px solid var(--line); background: transparent; border-radius: 999px;
+  padding: 6px 14px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--muted);
+}
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.grid {
+  display: grid; gap: 16px; padding-bottom: 64px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+.tile {
+  position: relative; display: grid; grid-template-rows: auto 1fr auto; gap: 10px;
+  min-height: 230px; padding: 18px 18px 16px; border-radius: var(--radius);
+  color: var(--ink); text-decoration: none; overflow: hidden;
+  transition: transform .18s cubic-bezier(.3,1.6,.5,1), box-shadow .18s;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+.tile:hover { transform: translateY(-4px) rotate(-0.6deg); box-shadow: 0 10px 0 rgba(0,0,0,.14); }
+.tile:nth-child(even):hover { transform: translateY(-4px) rotate(0.6deg); }
+.tile .cat {
+  justify-self: start; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  border: 1.5px solid currentColor; border-radius: 999px; padding: 2px 9px; opacity: .8;
+}
+.tile .spec {
+  font-family: var(--font-mono); font-weight: 700; font-size: 34px; line-height: 1.05;
+  align-self: center; letter-spacing: -0.02em; overflow-wrap: anywhere;
+}
+.tile h2 { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1.05; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.tile p { margin: 4px 0 0; font-size: 14.5px; line-height: 1.4; opacity: .85; }
+.hub-foot { color: var(--muted); font-size: 14px; padding-bottom: 40px; }
+
+/* ---------- game shell ---------- */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.bar .wrap { display: flex; align-items: center; gap: 14px; padding-block: 10px; }
+.back {
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--fg);
+  font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line);
+}
+.back:hover { border-color: var(--fg); }
+.bar .gtitle { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .dot { width: 12px; height: 12px; border-radius: 4px; flex: none; }
+.stage { padding-block: 24px 56px; }
+
+/* ---------- shared game bits ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1.5px solid var(--line); background: var(--surface); color: var(--fg);
+  padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer;
+  transition: transform .08s, background .15s, border-color .15s;
+}
+.btn:hover { border-color: var(--fg); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.big { font-size: 20px; padding: 14px 28px; border-radius: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.display { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.02em; }
+.g-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 5vw, 52px); line-height: 1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.g-lede { font-size: 18px; color: var(--muted); max-width: 60ch; margin: 10px 0 0; }
+.toast-stack { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; z-index: 50; max-width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.toast { background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; animation: toast-in .25s ease-out; }
+@keyframes toast-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+<script>
+/* ---------- Arcade core: registry, router, helpers ---------- */
+window.Arcade = (() => {
+  const games = [];
+  const CATS = { skill: "Skill", rules: "Rules", scale: "Scale", idle: "Idle", everyone: "Everyone" };
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("olg:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("olg:" + k, JSON.stringify(v)); } catch {} },
+    del(k) { try { localStorage.removeItem("olg:" + k); } catch {} },
+  };
+
+  let actx = null;
+  function audio() {
+    try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === "suspended") actx.resume(); } catch { actx = null; }
+    return actx;
+  }
+  function beep(freq = 440, dur = 0.12, type = "sine", vol = 0.15, when = 0) {
+    const a = audio(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = a.currentTime + when;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  function toast(msg, ms = 3200) {
+    const el = document.createElement("div"); el.className = "toast"; el.textContent = msg;
+    document.getElementById("toasts").appendChild(el);
+    setTimeout(() => el.remove(), ms);
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+  function makeCtx() {
+    const ac = new AbortController(); const timers = new Set(); const cleanups = [];
+    return {
+      signal: ac.signal,
+      on(el, ev, fn, opt) { el.addEventListener(ev, fn, { ...(opt || {}), signal: ac.signal }); },
+      timeout(fn, ms) { const t = setTimeout(() => { timers.delete(t); if (!ac.signal.aborted) fn(); }, ms); timers.add(t); return t; },
+      interval(fn, ms) { const t = setInterval(() => { if (!ac.signal.aborted) fn(); }, ms); timers.add(t); return t; },
+      clear(t) { clearTimeout(t); clearInterval(t); timers.delete(t); },
+      raf(fn) { const loop = ts => { if (ac.signal.aborted) return; if (fn(ts) !== false) requestAnimationFrame(loop); }; requestAnimationFrame(loop); },
+      onCleanup(f) { cleanups.push(f); },
+      get dead() { return ac.signal.aborted; },
+      destroy() { ac.abort(); timers.forEach(t => { clearTimeout(t); clearInterval(t); }); cleanups.forEach(f => { try { f(); } catch {} }); },
+    };
+  }
+
+  /* Shared data: resolves {db, uid, user} or null when this view has no shared store. */
+  let sharedP = null;
+  function shared() {
+    if (sharedP) return sharedP;
+    sharedP = (async () => {
+      try {
+        if (!window.claude || typeof window.claude.use !== "function") return null;
+        const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+        if (!db || !user) return null;
+        const uid = await user.id();
+        if (!uid) return null;
+        let canWrite = null;
+        try { canWrite = await user.can("data.write"); } catch {}
+        return { db, user, uid, canWrite };
+      } catch { return null; }
+    })();
+    return sharedP;
+  }
+
+  function canvasFit(canvas, w, h) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const c = canvas.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); return c;
+  }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  let current = null; let filter = "all";
+  const app = () => document.getElementById("app");
+
+  function renderHub() {
+    const list = games.filter(g => filter === "all" || g.cat === filter);
+    app().innerHTML = `
+      <header class="wrap hub-head">
+        <h1>Odd <span class="wobble">Little</span> Games</h1>
+        <p>Twelve small browser games about holding still, counting time, reading fine print, falling objects and other people. Each one takes a minute to learn.</p>
+      </header>
+      <nav class="wrap filters" aria-label="Filter games">
+        ${[["all", "All twelve"], ...Object.entries(CATS)].map(([k, v]) => `<button class="chip" data-f="${k}" aria-pressed="${filter === k}">${v}</button>`).join("")}
+      </nav>
+      <main class="wrap grid">
+        ${list.map(g => `
+          <a class="tile" href="#${g.id}" style="background:var(${g.color})">
+            <span class="cat">${CATS[g.cat]}</span>
+            <span class="spec" aria-hidden="true">${g.spec}</span>
+            <div><h2>${esc(g.title)}</h2><p>${esc(g.blurb)}</p></div>
+          </a>`).join("")}
+      </main>
+      <footer class="wrap hub-foot">Best scores are saved in this browser. Am I Normal? and One Button share their numbers with everyone who opens this page.</footer>`;
+    app().querySelectorAll(".chip").forEach(b => b.onclick = () => { filter = b.dataset.f; renderHub(); });
+  }
+
+  function route() {
+    if (current) { current.ctx.destroy(); current = null; }
+    const id = (location.hash || "").slice(1);
+    const g = games.find(x => x.id === id);
+    window.scrollTo(0, 0);
+    if (!g) { document.title = "Odd Little Games"; renderHub(); return; }
+    document.title = g.title + " · Odd Little Games";
+    app().innerHTML = `
+      <div class="bar"><div class="wrap">
+        <a class="back" href="#">← All games</a>
+        <span class="dot" style="background:var(${g.color})"></span>
+        <span class="gtitle">${esc(g.title)}</span>
+      </div></div>
+      <div class="wrap stage" id="stage"></div>`;
+    const ctx = makeCtx();
+    current = { g, ctx };
+    try { g.mount(document.getElementById("stage"), ctx); }
+    catch (e) { console.error(e); document.getElementById("stage").innerHTML = `<p>This game failed to start: ${esc(e.message)}</p>`; }
+  }
+
+  function register(def) { games.push(def); }
+  function start() { window.addEventListener("hashchange", route); route(); }
+
+  return { register, start, store, beep, audio, toast, esc, shared, canvasFit, css, games };
+})();
+</script>
+<script src="games/hold-still.js"></script>
+<script src="games/guess-second.js"></script>
+<script src="games/parking.js"></script>
+<script src="games/terms.js"></script>
+<script src="games/captcha.js"></script>
+<script src="games/on-hold.js"></script>
+<script src="games/billion.js"></script>
+<script src="games/falling.js"></script>
+<script src="games/lemonade.js"></script>
+<script src="games/ants.js"></script>
+<script src="games/normal.js"></script>
+<script src="games/one-button.js"></script>
+<script>Arcade.start();</script>
+</body>
+</html>
